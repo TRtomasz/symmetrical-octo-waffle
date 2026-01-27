@@ -206,15 +206,16 @@ const extendSelection = (row, col) => {
     return;
   }
 
-  const previous = selectionState.path[selectionState.path.length - 2];
-  if (previous && previous.row === row && previous.col === col) {
-    selectionState.path.pop();
+  const existingIndex = selectionState.path.findIndex(
+    (cell) => cell.row === row && cell.col === col
+  );
+  if (existingIndex !== -1) {
+    if (existingIndex === selectionState.path.length - 1) {
+      return;
+    }
     clearSelectionHighlights();
+    selectionState.path = selectionState.path.slice(0, existingIndex + 1);
     applySelectionHighlights();
-    return;
-  }
-
-  if (selectionState.path.some((cell) => cell.row === row && cell.col === col)) {
     return;
   }
 
