@@ -58,13 +58,11 @@ const placeWord = (grid, word, startX, startY, direction) => {
   }
 };
 
-const generateGrid = (words) => {
-  const normalizedWords = words.map((word) => word.toUpperCase());
-  const size = Math.max(11, longestWordLength(normalizedWords));
+const tryGenerateGrid = (words, size) => {
   const grid = createEmptyGrid(size);
   const maxAttempts = 1000;
 
-  for (const word of normalizedWords) {
+  for (const word of words) {
     let placedWord = false;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -83,11 +81,26 @@ const generateGrid = (words) => {
     }
 
     if (!placedWord) {
-      throw new Error(`Unable to place word: ${word}`);
+      return null;
     }
   }
 
   return grid.map((row) => row.map((cell) => cell ?? randomLetter(Math.random)));
+};
+
+const generateGrid = (words) => {
+  const normalizedWords = words.map((word) => word.toUpperCase());
+  const minSize = 4;
+  const longest = longestWordLength(normalizedWords);
+  let size = Math.max(minSize, longest);
+
+  while (true) {
+    const candidate = tryGenerateGrid(normalizedWords, size);
+    if (candidate) {
+      return candidate;
+    }
+    size += 1;
+  }
 };
 
 const gridElement = document.querySelector("#letterGrid");
@@ -202,6 +215,9 @@ const extendSelection = (row, col) => {
   const previous = selectionState.path[selectionState.path.length - 2];
   if (previous && previous.row === row && previous.col === col) {
     selectionState.path.pop();
+    if (selectionState.path.length < 2) {
+      selectionState.direction = null;
+    }
     clearSelectionHighlights();
     applySelectionHighlights();
     return;
