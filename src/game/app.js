@@ -150,15 +150,6 @@ const initializeCellUsageCounts = () => {
       cellUsageCounts.set(key, (cellUsageCounts.get(key) ?? 0) + 1);
     });
   });
-
-  grid.forEach((row, rowIndex) => {
-    row.forEach((_, colIndex) => {
-      const key = cellKey(rowIndex, colIndex);
-      if (!cellUsageCounts.has(key)) {
-        cellUsageCounts.set(key, 1);
-      }
-    });
-  });
 };
 
 const pathsMatch = (path, targetPath) =>
@@ -230,8 +221,14 @@ const clearHighlights = () => {
   });
 };
 
+const isCellStillActive = ({ row, col }) =>
+  (cellUsageCounts.get(cellKey(row, col)) ?? 0) > 0;
+
 const applyPathHighlights = (path, variant) => {
   path.forEach((cellData, index) => {
+    if (variant === "found" && !isCellStillActive(cellData)) {
+      return;
+    }
     const cell = getCellElement(cellData.row, cellData.col);
     if (!cell) {
       return;
@@ -240,20 +237,24 @@ const applyPathHighlights = (path, variant) => {
 
     const next = path[index + 1];
     if (next) {
-      const dx = next.col - cellData.col;
-      const dy = next.row - cellData.row;
-      const direction = directionFromDelta(dx, dy);
-      if (direction) {
-        addConnector(cell, direction, variant);
+      if (!(variant === "found" && !isCellStillActive(next))) {
+        const dx = next.col - cellData.col;
+        const dy = next.row - cellData.row;
+        const direction = directionFromDelta(dx, dy);
+        if (direction) {
+          addConnector(cell, direction, variant);
+        }
       }
     }
     const prev = path[index - 1];
     if (prev) {
-      const dx = prev.col - cellData.col;
-      const dy = prev.row - cellData.row;
-      const direction = directionFromDelta(dx, dy);
-      if (direction) {
-        addConnector(cell, direction, variant);
+      if (!(variant === "found" && !isCellStillActive(prev))) {
+        const dx = prev.col - cellData.col;
+        const dy = prev.row - cellData.row;
+        const direction = directionFromDelta(dx, dy);
+        if (direction) {
+          addConnector(cell, direction, variant);
+        }
       }
     }
   });
