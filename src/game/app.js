@@ -87,6 +87,8 @@ const selectionState = {
   path: [],
 };
 
+let audioContext;
+
 const renderWordList = () => {
   wordListElement.innerHTML = "";
   WORDS.forEach((word) => {
@@ -115,7 +117,13 @@ const renderGrid = () => {
     row.forEach((letter, columnIndex) => {
       const cell = document.createElement("div");
       cell.className = "cell";
-      cell.textContent = letter;
+      const connectorLayer = document.createElement("div");
+      connectorLayer.className = "cell-connectors";
+      const letterSpan = document.createElement("span");
+      letterSpan.className = "cell-letter";
+      letterSpan.textContent = letter;
+      cell.appendChild(connectorLayer);
+      cell.appendChild(letterSpan);
       cell.dataset.row = rowIndex.toString();
       cell.dataset.col = columnIndex.toString();
       cell.setAttribute("role", "button");
@@ -187,29 +195,107 @@ const updateGridAvailability = () => {
   });
 };
 
-const clearSelectionHighlights = () => {
-  selectionState.path.forEach(({ row, col }) => {
-    const cell = getCellElement(row, col);
-    if (cell) {
-      cell.classList.remove("selected");
+const directionFromDelta = (dx, dy) => {
+  const key = `${dx},${dy}`;
+  const directionMap = {
+    "0,-1": "north",
+    "1,-1": "north-east",
+    "1,0": "east",
+    "1,1": "south-east",
+    "0,1": "south",
+    "-1,1": "south-west",
+    "-1,0": "west",
+    "-1,-1": "north-west",
+  };
+  return directionMap[key] ?? null;
+};
+
+const addConnector = (cell, direction, variant) => {
+  const connectorLayer = cell.querySelector(".cell-connectors");
+  if (!connectorLayer) {
+    return;
+  }
+  const connector = document.createElement("span");
+  connector.className = `connector connector--${direction} connector--${variant}`;
+  connectorLayer.appendChild(connector);
+};
+
+const clearHighlights = () => {
+  gridElement.querySelectorAll(".cell").forEach((cell) => {
+    cell.classList.remove("selected", "found");
+    const connectorLayer = cell.querySelector(".cell-connectors");
+    if (connectorLayer) {
+      connectorLayer.innerHTML = "";
     }
   });
 };
 
-const applySelectionHighlights = () => {
-  selectionState.path.forEach(({ row, col }) => {
-    const cell = getCellElement(row, col);
-    if (cell) {
-      cell.classList.add("selected");
+const applyPathHighlights = (path, variant) => {
+  path.forEach((cellData, index) => {
+    const cell = getCellElement(cellData.row, cellData.col);
+    if (!cell) {
+      return;
+    }
+    cell.classList.add(variant);
+
+    const next = path[index + 1];
+    if (next) {
+      const dx = next.col - cellData.col;
+      const dy = next.row - cellData.row;
+      const direction = directionFromDelta(dx, dy);
+      if (direction) {
+        addConnector(cell, direction, variant);
+      }
+    }
+    const prev = path[index - 1];
+    if (prev) {
+      const dx = prev.col - cellData.col;
+      const dy = prev.row - cellData.row;
+      const direction = directionFromDelta(dx, dy);
+      if (direction) {
+        addConnector(cell, direction, variant);
+      }
     }
   });
+};
+
+const updateHighlights = () => {
+  clearHighlights();
+  foundWords.forEach((word) => {
+    const path = WORD_PATHS[word];
+    if (path) {
+      applyPathHighlights(path, "found");
+    }
+  });
+  if (selectionState.path.length > 0) {
+    applyPathHighlights(selectionState.path, "selected");
+  }
+};
+
+const playSuccessSound = () => {
+  if (!audioContext) {
+    audioContext = new AudioContext();
+  }
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
+  gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.25);
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + 0.3);
 };
 
 const startSelection = (row, col) => {
-  clearSelectionHighlights();
   selectionState.isActive = true;
   selectionState.path = [{ row, col }];
-  applySelectionHighlights();
+  updateHighlights();
 };
 
 const canExtendSelection = (row, col) => {
@@ -241,9 +327,8 @@ const extendSelection = (row, col) => {
     if (existingIndex === selectionState.path.length - 1) {
       return;
     }
-    clearSelectionHighlights();
     selectionState.path = selectionState.path.slice(0, existingIndex + 1);
-    applySelectionHighlights();
+    updateHighlights();
     return;
   }
 
@@ -252,7 +337,7 @@ const extendSelection = (row, col) => {
   }
 
   selectionState.path.push({ row, col });
-  applySelectionHighlights();
+  updateHighlights();
 };
 
 const finalizeSelection = () => {
@@ -270,17 +355,18 @@ const finalizeSelection = () => {
       cellUsageCounts.set(key, Math.max(0, count - 1));
     });
     statusElement.textContent = `Found ${matchedWord}!`;
+    playSuccessSound();
   } else if (matchedWord) {
     statusElement.textContent = `${matchedWord} was already found.`;
   } else {
     statusElement.textContent = "Keep looking...";
   }
 
-  clearSelectionHighlights();
   selectionState.isActive = false;
   selectionState.path = [];
   updateWordList();
   updateGridAvailability();
+  updateHighlights();
 };
 
 const handlePointerDown = (event) => {
@@ -317,6 +403,7 @@ renderGrid();
 initializeCellUsageCounts();
 updateWordList();
 updateGridAvailability();
+updateHighlights();
 statusElement.textContent = "Start dragging to select letters.";
 
 gridElement.addEventListener("pointerdown", handlePointerDown);
