@@ -9,105 +9,18 @@ const WORDS = [
 
 const WORD_SET = new Set(WORDS.map((word) => word.toUpperCase()));
 
-const DIRECTIONS = [
-  { dx: 1, dy: 0 },
-  { dx: -1, dy: 0 },
-  { dx: 0, dy: 1 },
-  { dx: 0, dy: -1 },
-  { dx: 1, dy: 1 },
-  { dx: -1, dy: 1 },
-  { dx: 1, dy: -1 },
-  { dx: -1, dy: -1 },
-];
-
-const randomLetter = (random) => {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const index = Math.floor(random() * alphabet.length);
-  return alphabet[index];
-};
-
-const longestWordLength = (words) =>
-  words.reduce((max, word) => Math.max(max, word.length), 0);
-
-const createEmptyGrid = (size) =>
-  Array.from({ length: size }, () => Array.from({ length: size }, () => null));
-
-const canPlaceWord = (grid, word, startX, startY, direction) => {
-  const size = grid.length;
-  for (let i = 0; i < word.length; i += 1) {
-    const x = startX + direction.dx * i;
-    const y = startY + direction.dy * i;
-    if (x < 0 || y < 0 || x >= size || y >= size) {
-      return false;
-    }
-
-    const cell = grid[y][x];
-    if (cell !== null && cell !== word[i]) {
-      return false;
-    }
-  }
-
-  return true;
-};
-
-const placeWord = (grid, word, startX, startY, direction) => {
-  for (let i = 0; i < word.length; i += 1) {
-    const x = startX + direction.dx * i;
-    const y = startY + direction.dy * i;
-    grid[y][x] = word[i];
-  }
-};
-
-const tryGenerateGrid = (words, size) => {
-  const grid = createEmptyGrid(size);
-  const maxAttempts = 1000;
-
-  for (const word of words) {
-    let placedWord = false;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const direction =
-        DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
-      const startX = Math.floor(Math.random() * size);
-      const startY = Math.floor(Math.random() * size);
-
-      if (!canPlaceWord(grid, word, startX, startY, direction)) {
-        continue;
-      }
-
-      placeWord(grid, word, startX, startY, direction);
-      placedWord = true;
-      break;
-    }
-
-    if (!placedWord) {
-      return null;
-    }
-  }
-
-  return grid.map((row) => row.map((cell) => cell ?? randomLetter(Math.random)));
-};
-
-const generateGrid = (words) => {
-  const normalizedWords = words.map((word) => word.toUpperCase());
-  const minSize = 4;
-  const longest = longestWordLength(normalizedWords);
-  let size = Math.max(minSize, longest);
-
-  while (true) {
-    const candidate = tryGenerateGrid(normalizedWords, size);
-    if (candidate) {
-      return candidate;
-    }
-    size += 1;
-  }
-};
-
 const gridElement = document.querySelector("#letterGrid");
 const wordListElement = document.querySelector("#wordList");
 const statusElement = document.querySelector("#status");
 
-const grid = generateGrid(WORDS);
+const grid = [
+  ["O", "W", "T", "A", "I", "P"],
+  ["K", "R", "S", "E", "R", "H"],
+  ["A", "T", "N", "A", "U", "S"],
+  ["P", "O", "T", "T", "T", "A"],
+  ["I", "N", "I", "T", "S", "D"],
+  ["B", "L", "L", "E", "E", "X"],
+];
 const foundWords = new Set();
 const foundCells = new Set();
 
