@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Search</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game">
+      <header>
+        <h1>Word Search</h1>
+        <p class="subtitle">Drag across letters to find each word.</p>
+      </header>
+      <section class="content">
+        <aside class="word-list">
+          <h2>Find These Words</h2>
+          <ul id="wordList"></ul>
+        </aside>
+        <section class="grid" id="letterGrid" aria-label="Word search grid"></section>
+      </section>
+      <p class="status" id="status" aria-live="polite"></p>
+    </main>
+    <script type="module" src="src/game/app.js"></script>
+  </body>
+</html>
