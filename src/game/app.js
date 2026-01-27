@@ -114,7 +114,6 @@ const foundCells = new Set();
 const selectionState = {
   isActive: false,
   path: [],
-  direction: null,
 };
 
 const renderWordList = () => {
@@ -182,7 +181,6 @@ const startSelection = (row, col) => {
   clearSelectionHighlights();
   selectionState.isActive = true;
   selectionState.path = [{ row, col }];
-  selectionState.direction = null;
   applySelectionHighlights();
 };
 
@@ -195,12 +193,8 @@ const canExtendSelection = (row, col) => {
   const dx = col - last.col;
   const dy = row - last.row;
 
-  if (Math.abs(dx) > 1 || Math.abs(dy) > 1 || (dx === 0 && dy === 0)) {
+  if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
     return false;
-  }
-
-  if (selectionState.direction) {
-    return dx === selectionState.direction.dx && dy === selectionState.direction.dy;
   }
 
   return true;
@@ -215,22 +209,17 @@ const extendSelection = (row, col) => {
   const previous = selectionState.path[selectionState.path.length - 2];
   if (previous && previous.row === row && previous.col === col) {
     selectionState.path.pop();
-    if (selectionState.path.length < 2) {
-      selectionState.direction = null;
-    }
     clearSelectionHighlights();
     applySelectionHighlights();
     return;
   }
 
-  if (!canExtendSelection(row, col)) {
+  if (selectionState.path.some((cell) => cell.row === row && cell.col === col)) {
     return;
   }
 
-  const dx = col - last.col;
-  const dy = row - last.row;
-  if (!selectionState.direction) {
-    selectionState.direction = { dx, dy };
+  if (!canExtendSelection(row, col)) {
+    return;
   }
 
   selectionState.path.push({ row, col });
@@ -269,7 +258,6 @@ const finalizeSelection = () => {
   clearSelectionHighlights();
   selectionState.isActive = false;
   selectionState.path = [];
-  selectionState.direction = null;
   updateWordList();
 };
 
