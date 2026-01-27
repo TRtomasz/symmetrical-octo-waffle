@@ -10,6 +10,7 @@ The game must include **only** the following five target words, spelled exactly 
 - NETWORK
 - ATTESTATION
 - PARTNERSHIP
+- AURA
 
 ## Permitted Words
 - **No additional target words are permitted.** Only the five words listed above should be considered valid for completion.
