@@ -7,7 +7,65 @@ const WORDS = [
   "AURA",
 ];
 
-const WORD_SET = new Set(WORDS.map((word) => word.toUpperCase()));
+const WORD_PATHS = {
+  ATTESTATION: [
+    { row: 3, col: 5 },
+    { row: 3, col: 4 },
+    { row: 4, col: 3 },
+    { row: 5, col: 3 },
+    { row: 4, col: 4 },
+    { row: 3, col: 3 },
+    { row: 2, col: 3 },
+    { row: 3, col: 2 },
+    { row: 4, col: 2 },
+    { row: 3, col: 1 },
+    { row: 4, col: 1 },
+  ],
+  PARTNERSHIP: [
+    { row: 3, col: 0 },
+    { row: 2, col: 0 },
+    { row: 1, col: 1 },
+    { row: 2, col: 1 },
+    { row: 2, col: 2 },
+    { row: 1, col: 3 },
+    { row: 1, col: 4 },
+    { row: 2, col: 5 },
+    { row: 1, col: 5 },
+    { row: 0, col: 4 },
+    { row: 0, col: 5 },
+  ],
+  ADEX: [
+    { row: 3, col: 5 },
+    { row: 4, col: 5 },
+    { row: 5, col: 4 },
+    { row: 5, col: 5 },
+  ],
+  BILLIONS: [
+    { row: 5, col: 0 },
+    { row: 4, col: 0 },
+    { row: 5, col: 1 },
+    { row: 5, col: 2 },
+    { row: 4, col: 2 },
+    { row: 3, col: 1 },
+    { row: 2, col: 2 },
+    { row: 1, col: 2 },
+  ],
+  AURA: [
+    { row: 2, col: 3 },
+    { row: 2, col: 4 },
+    { row: 1, col: 4 },
+    { row: 0, col: 3 },
+  ],
+  NETWORK: [
+    { row: 2, col: 2 },
+    { row: 1, col: 3 },
+    { row: 0, col: 2 },
+    { row: 0, col: 1 },
+    { row: 0, col: 0 },
+    { row: 1, col: 1 },
+    { row: 1, col: 0 },
+  ],
+};
 
 const gridElement = document.querySelector("#letterGrid");
 const wordListElement = document.querySelector("#wordList");
@@ -22,7 +80,6 @@ const grid = [
   ["B", "L", "L", "E", "E", "X"],
 ];
 const foundWords = new Set();
-const foundCells = new Set();
 
 const selectionState = {
   isActive: false,
@@ -71,6 +128,53 @@ const cellKey = (row, col) => `${row}-${col}`;
 
 const getCellElement = (row, col) =>
   gridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+
+const pathsMatch = (path, targetPath) =>
+  path.length === targetPath.length &&
+  path.every(
+    (cell, index) =>
+      cell.row === targetPath[index].row && cell.col === targetPath[index].col
+  );
+
+const findMatchingWord = (path) => {
+  for (const word of WORDS) {
+    const wordPath = WORD_PATHS[word];
+    if (!wordPath) {
+      continue;
+    }
+    if (pathsMatch(path, wordPath) || pathsMatch(path, wordPath.slice().reverse())) {
+      return word;
+    }
+  }
+  return null;
+};
+
+const updateGridAvailability = () => {
+  const activeCells = new Set();
+  WORDS.forEach((word) => {
+    if (foundWords.has(word)) {
+      return;
+    }
+    const path = WORD_PATHS[word];
+    if (!path) {
+      return;
+    }
+    path.forEach(({ row, col }) => {
+      activeCells.add(cellKey(row, col));
+    });
+  });
+
+  grid.forEach((row, rowIndex) => {
+    row.forEach((_, colIndex) => {
+      const cell = getCellElement(rowIndex, colIndex);
+      if (!cell) {
+        return;
+      }
+      const isActive = activeCells.has(cellKey(rowIndex, colIndex));
+      cell.classList.toggle("inactive", !isActive);
+    });
+  });
+};
 
 const clearSelectionHighlights = () => {
   selectionState.path.forEach(({ row, col }) => {
@@ -145,23 +249,10 @@ const finalizeSelection = () => {
     return;
   }
 
-  const letters = selectionState.path.map(({ row, col }) => grid[row][col]);
-  const word = letters.join("");
-  const reversed = letters.slice().reverse().join("");
-  const matchedWord = WORD_SET.has(word) ? word : WORD_SET.has(reversed) ? reversed : null;
+  const matchedWord = findMatchingWord(selectionState.path);
 
   if (matchedWord && !foundWords.has(matchedWord)) {
     foundWords.add(matchedWord);
-    selectionState.path.forEach(({ row, col }) => {
-      const key = cellKey(row, col);
-      if (!foundCells.has(key)) {
-        foundCells.add(key);
-        const cell = getCellElement(row, col);
-        if (cell) {
-          cell.classList.add("found");
-        }
-      }
-    });
     statusElement.textContent = `Found ${matchedWord}!`;
   } else if (matchedWord) {
     statusElement.textContent = `${matchedWord} was already found.`;
@@ -173,6 +264,7 @@ const finalizeSelection = () => {
   selectionState.isActive = false;
   selectionState.path = [];
   updateWordList();
+  updateGridAvailability();
 };
 
 const handlePointerDown = (event) => {
@@ -207,6 +299,7 @@ const handlePointerUp = () => {
 renderWordList();
 renderGrid();
 updateWordList();
+updateGridAvailability();
 statusElement.textContent = "Start dragging to select letters.";
 
 gridElement.addEventListener("pointerdown", handlePointerDown);

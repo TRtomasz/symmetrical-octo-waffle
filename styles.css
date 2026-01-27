@@ -99,14 +99,14 @@ header h1 {
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
+.cell.inactive {
+  background: #e3e5ed;
+  color: #8b90a1;
+}
+
 .cell.selected {
   background: #a9d6ff;
   color: #0f2c51;
-}
-
-.cell.found {
-  background: #7ee7b5;
-  color: #0c3d24;
 }
 
 .status {
