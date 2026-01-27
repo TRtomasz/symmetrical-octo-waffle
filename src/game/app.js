@@ -80,6 +80,7 @@ const grid = [
   ["B", "L", "L", "E", "E", "X"],
 ];
 const foundWords = new Set();
+const cellUsageCounts = new Map();
 
 const selectionState = {
   isActive: false,
@@ -129,6 +130,29 @@ const cellKey = (row, col) => `${row}-${col}`;
 const getCellElement = (row, col) =>
   gridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
 
+const initializeCellUsageCounts = () => {
+  cellUsageCounts.clear();
+  WORDS.forEach((word) => {
+    const path = WORD_PATHS[word];
+    if (!path) {
+      return;
+    }
+    path.forEach(({ row, col }) => {
+      const key = cellKey(row, col);
+      cellUsageCounts.set(key, (cellUsageCounts.get(key) ?? 0) + 1);
+    });
+  });
+
+  grid.forEach((row, rowIndex) => {
+    row.forEach((_, colIndex) => {
+      const key = cellKey(rowIndex, colIndex);
+      if (!cellUsageCounts.has(key)) {
+        cellUsageCounts.set(key, 1);
+      }
+    });
+  });
+};
+
 const pathsMatch = (path, targetPath) =>
   path.length === targetPath.length &&
   path.every(
@@ -150,27 +174,14 @@ const findMatchingWord = (path) => {
 };
 
 const updateGridAvailability = () => {
-  const activeCells = new Set();
-  WORDS.forEach((word) => {
-    if (foundWords.has(word)) {
-      return;
-    }
-    const path = WORD_PATHS[word];
-    if (!path) {
-      return;
-    }
-    path.forEach(({ row, col }) => {
-      activeCells.add(cellKey(row, col));
-    });
-  });
-
   grid.forEach((row, rowIndex) => {
     row.forEach((_, colIndex) => {
       const cell = getCellElement(rowIndex, colIndex);
       if (!cell) {
         return;
       }
-      const isActive = activeCells.has(cellKey(rowIndex, colIndex));
+      const count = cellUsageCounts.get(cellKey(rowIndex, colIndex)) ?? 0;
+      const isActive = count > 0;
       cell.classList.toggle("inactive", !isActive);
     });
   });
@@ -253,6 +264,11 @@ const finalizeSelection = () => {
 
   if (matchedWord && !foundWords.has(matchedWord)) {
     foundWords.add(matchedWord);
+    WORD_PATHS[matchedWord]?.forEach(({ row, col }) => {
+      const key = cellKey(row, col);
+      const count = cellUsageCounts.get(key) ?? 0;
+      cellUsageCounts.set(key, Math.max(0, count - 1));
+    });
     statusElement.textContent = `Found ${matchedWord}!`;
   } else if (matchedWord) {
     statusElement.textContent = `${matchedWord} was already found.`;
@@ -298,6 +314,7 @@ const handlePointerUp = () => {
 
 renderWordList();
 renderGrid();
+initializeCellUsageCounts();
 updateWordList();
 updateGridAvailability();
 statusElement.textContent = "Start dragging to select letters.";
