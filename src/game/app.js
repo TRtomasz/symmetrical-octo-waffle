@@ -88,6 +88,8 @@ const selectionState = {
 };
 
 let audioContext;
+let foundFlashTimeout;
+let foundFlashPath = [];
 
 const renderWordList = () => {
   wordListElement.innerHTML = "";
@@ -243,12 +245,9 @@ const applyPathHighlights = (path, variant) => {
 
 const updateHighlights = () => {
   clearHighlights();
-  foundWords.forEach((word) => {
-    const path = WORD_PATHS[word];
-    if (path) {
-      applyPathHighlights(path, "found");
-    }
-  });
+  if (foundFlashPath.length > 0) {
+    applyPathHighlights(foundFlashPath, "found");
+  }
   if (selectionState.path.length > 0) {
     applyPathHighlights(selectionState.path, "selected");
   }
@@ -331,11 +330,20 @@ const finalizeSelection = () => {
 
   if (matchedWord && !foundWords.has(matchedWord)) {
     foundWords.add(matchedWord);
-    WORD_PATHS[matchedWord]?.forEach(({ row, col }) => {
+    const matchedPath = WORD_PATHS[matchedWord] ?? [];
+    matchedPath.forEach(({ row, col }) => {
       const key = cellKey(row, col);
       const count = cellUsageCounts.get(key) ?? 0;
       cellUsageCounts.set(key, Math.max(0, count - 1));
     });
+    foundFlashPath = matchedPath;
+    if (foundFlashTimeout) {
+      clearTimeout(foundFlashTimeout);
+    }
+    foundFlashTimeout = window.setTimeout(() => {
+      foundFlashPath = [];
+      updateHighlights();
+    }, 1000);
     statusElement.textContent = `Found ${matchedWord}!`;
     playSuccessSound();
   } else if (matchedWord) {
