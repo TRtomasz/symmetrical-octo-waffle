@@ -180,7 +180,7 @@ header h1 {
 .connector--west {
   top: 50%;
   height: 20%;
-  width: calc(50% + var(--cell-gap) / 2);
+  width: calc(100% + var(--cell-gap));
   transform: translateY(-50%);
 }
 
@@ -189,19 +189,19 @@ header h1 {
 }
 
 .connector--west {
-  left: 0;
+  right: 50%;
 }
 
 .connector--north,
 .connector--south {
   left: 50%;
   width: 20%;
-  height: calc(50% + var(--cell-gap) / 2);
+  height: calc(100% + var(--cell-gap));
   transform: translateX(-50%);
 }
 
 .connector--north {
-  top: 0;
+  bottom: 50%;
 }
 
 .connector--south {
@@ -214,7 +214,7 @@ header h1 {
 .connector--south-west {
   top: 50%;
   left: 50%;
-  width: calc(70% + var(--cell-gap) / 2);
+  width: calc(141% + (var(--cell-gap) * 1.4142));
   height: 18%;
   transform-origin: left center;
 }
@@ -228,11 +228,11 @@ header h1 {
 }
 
 .connector--north-west {
-  transform: translate(-50%, -50%) rotate(-135deg);
+  transform: translate(0, -50%) rotate(-135deg);
 }
 
 .connector--south-west {
-  transform: translate(-50%, -50%) rotate(135deg);
+  transform: translate(0, -50%) rotate(135deg);
 }
 
 .status {

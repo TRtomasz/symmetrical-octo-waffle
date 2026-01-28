@@ -221,14 +221,8 @@ const clearHighlights = () => {
   });
 };
 
-const isCellStillActive = ({ row, col }) =>
-  (cellUsageCounts.get(cellKey(row, col)) ?? 0) > 0;
-
 const applyPathHighlights = (path, variant) => {
   path.forEach((cellData, index) => {
-    if (variant === "found" && !isCellStillActive(cellData)) {
-      return;
-    }
     const cell = getCellElement(cellData.row, cellData.col);
     if (!cell) {
       return;
@@ -237,24 +231,11 @@ const applyPathHighlights = (path, variant) => {
 
     const next = path[index + 1];
     if (next) {
-      if (!(variant === "found" && !isCellStillActive(next))) {
-        const dx = next.col - cellData.col;
-        const dy = next.row - cellData.row;
-        const direction = directionFromDelta(dx, dy);
-        if (direction) {
-          addConnector(cell, direction, variant);
-        }
-      }
-    }
-    const prev = path[index - 1];
-    if (prev) {
-      if (!(variant === "found" && !isCellStillActive(prev))) {
-        const dx = prev.col - cellData.col;
-        const dy = prev.row - cellData.row;
-        const direction = directionFromDelta(dx, dy);
-        if (direction) {
-          addConnector(cell, direction, variant);
-        }
+      const dx = next.col - cellData.col;
+      const dy = next.row - cellData.row;
+      const direction = directionFromDelta(dx, dy);
+      if (direction) {
+        addConnector(cell, direction, variant);
       }
     }
   });
